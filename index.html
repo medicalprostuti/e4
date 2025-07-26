@@ -1,0 +1,1505 @@
+<!DOCTYPE html>
+<html lang="bn">
+  <head>
+    <script>
+      document.addEventListener("contextmenu", (event) =>
+        event.preventDefault()
+      );
+      document.addEventListener("keydown", (event) => {
+        if (
+          (event.ctrlKey &&
+            ["u", "s", "i", "j"].includes(event.key.toLowerCase())) ||
+          event.key === "F12"
+        ) {
+          event.preventDefault();
+        }
+      });
+    </script>
+
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Online Exam</title>
+    <!-- Chart.js CDN -->
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+      @import url("https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@300;400;500;600;700&display=swap");
+
+      body {
+        font-family: "Hind Siliguri", sans-serif;
+        margin: 0;
+        padding: 0;
+        background-color: #f4f4f4;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+      }
+
+      .container {
+        font-family: "Hind Siliguri", sans-serif;
+        width: 100%;
+        margin: auto;
+        background-color: white;
+        padding: 20px;
+        border-radius: 10px;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        min-height: 80vh;
+      }
+
+      .exam-content {
+        padding: 20px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+      }
+
+      h1 {
+        color: #1b0b54;
+        text-align: center;
+        margin-bottom: 10px;
+      }
+
+      #timer {
+        font-size: 20px;
+        color: #1b0b54;
+        margin-bottom: 5px;
+        font-weight: normal;
+        text-align: center;
+      }
+
+      #exam-info {
+        font-size: 16px;
+        color: black;
+        margin-bottom: 20px;
+        text-align: center;
+      }
+
+      #exam {
+        width: 100%;
+        min-height: 100px;
+      }
+
+      .chart-container {
+        width: 200px;
+        height: 200px;
+        margin: 10px auto;
+        background-color: #f9f9f9;
+        border-radius: 15px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        display: none;
+        padding: 10px;
+      }
+
+      .chart-container.visible {
+        display: block;
+      }
+
+      .question-container {
+        text-align: left;
+        margin-bottom: 20px;
+        display: block;
+      }
+
+      .question-label {
+        font-weight: bold;
+        color: #1b0b54;
+        margin-bottom: 10px;
+      }
+
+      .options {
+        margin-top: 10px;
+      }
+
+      .option {
+        margin-bottom: 8px;
+        display: flex;
+        align-items: center;
+        cursor: pointer;
+        padding: 5px;
+        border-radius: 5px;
+        text-transform: uppercase;
+      }
+
+      .circle {
+        width: 20px;
+        height: 20px;
+        border-radius: 50%;
+        border: 2px solid #1b0b54;
+        margin-right: 10px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        color: #1b0b54;
+        font-weight: bold;
+        font-size: 18px;
+      }
+
+      .selected .circle {
+        background-color: #1b0b54;
+        color: white;
+      }
+
+      .correct-text {
+        color: green !important;
+      }
+
+      .incorrect-text {
+        color: #ff0800 !important;
+      }
+
+      .unattempted-text {
+        color: orange !important;
+      }
+
+      #submitBtn {
+        font-family: hind siliguri;
+        padding: 15px 30px;
+        background-color: #1b0b54;
+        color: white;
+        border: none;
+        cursor: pointer;
+        font-size: 18px;
+        font-weight: bold;
+        border-radius: 10px;
+        margin-top: 20px;
+        width: 200px;
+        transition: background-color 0.3s ease;
+      }
+
+      #submitBtn:hover {
+        background-color: #1b0b54;
+      }
+
+      .popup {
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background-color: white;
+        padding: 20px;
+        width: 300px;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+        border-radius: 10px;
+        text-align: center;
+        display: none;
+        z-index: 1000;
+        transition: transform 0.5s ease, opacity 0.5s ease;
+      }
+
+      .popup.slide-out {
+        transform: translate(-50%, -100%);
+        opacity: 0;
+      }
+
+      .popup-header {
+        background-color: #1b0b54;
+        color: white;
+        padding: 10px;
+        font-size: 20px;
+        font-weight: bold;
+        border-radius: 10px 10px 0 0;
+      }
+
+      .popup-body {
+        padding: 15px;
+      }
+
+      .popup-body p {
+        margin: 10px 0;
+      }
+
+      .confirm-btn {
+        font-family: hind siliguri;
+        background-color: #34c759;
+        color: white;
+        padding: 8px 15px;
+        border: none;
+        cursor: pointer;
+        font-size: 14px;
+        border-radius: 5px;
+        margin: 5px;
+      }
+
+      .confirm-btn:hover {
+        background-color: #34c759;
+      }
+
+      .cancel-btn {
+        background-color: #ff3b30;
+        color: white;
+        padding: 8px 15px;
+        border: none;
+        cursor: pointer;
+        font-size: 14px;
+        border-radius: 5px;
+        margin: 5px;
+      }
+
+      .cancel-btn:hover {
+        background-color: #e02b21;
+      }
+
+      .explanation-dropdown {
+        display: none;
+        margin-top: 10px;
+      }
+
+      .explanation-dropdown.visible {
+        display: block;
+      }
+
+      .explanation-btn {
+        background-color: #1b0b54;
+        color: white;
+        padding: 8px 15px;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        font-size: 14px;
+        font-family: "Hind Siliguri", sans-serif;
+        width: 40%;
+        text-align: left;
+        position: relative;
+      }
+
+      .explanation-btn:hover {
+        background-color: #1b0b54;
+      }
+
+      .explanation-btn::after {
+        content: "▼";
+        position: absolute;
+        right: 10px;
+        font-size: 12px;
+      }
+
+      .explanation-btn.active::after {
+        content: "▲";
+      }
+
+      .explanation-content {
+        display: none;
+        padding: 15px;
+        background-color: #f9f9f9;
+        border: 1px solid #ccc;
+        border-radius: 5px;
+        font-size: 14px;
+        color: #000000;
+        text-align: left;
+        max-height: 450px;
+        overflow-y: auto;
+        margin-top: 5px;
+      }
+
+      .explanation-content.visible {
+        display: block;
+      }
+
+      .explanation-content p {
+        margin: 0 0 10px 0;
+      }
+
+      .explanation-content ul {
+        margin: 0;
+        padding-left: 20px;
+      }
+
+      .explanation-content li {
+        margin-bottom: 5px;
+      }
+
+      .explanation-content strong {
+        color: #1b0b54;
+      }
+
+      .explanation-label {
+        font-weight: bold;
+        color: #1b0b54;
+        margin-bottom: 10px;
+        display: block;
+      }
+
+      .locked .option {
+        pointer-events: none;
+        cursor: default;
+      }
+
+      .locked .option.selected {
+        pointer-events: none;
+        cursor: default;
+      }
+    </style>
+  </head>
+
+  <body>
+    <div class="container" id="examContainer">
+      <div class="exam-content">
+        <h1>ইংরেজী অনুশীলন</h1>
+        <div id="timer"></div>
+        <div id="exam-info"></div>
+        <div class="chart-container">
+          <canvas id="scoreChart"></canvas>
+        </div>
+        <div id="exam">
+          <!-- Questions will be generated dynamically -->
+        </div>
+        <button id="submitBtn">সাবমিট</button>
+      </div>
+    </div>
+
+    <div class="popup" id="scorePopup">
+      <div class="popup-header">তোমার স্কোর</div>
+      <div class="popup-body">
+        <p><strong>মোট প্রশ্ন:</strong> <span id="totalQuestions"></span></p>
+        <p>
+          <strong>উত্তর দিয়েছো:</strong>
+          <span style="color: #000000" id="answered"></span>
+        </p>
+        <p>
+          <strong>সঠিক উত্তর:</strong>
+          <span style="color: #0ab853" id="correctAnswers"></span>
+        </p>
+        <p>
+          <strong>ভুল উত্তর:</strong>
+          <span style="color: #f81010" id="wrongAnswers"></span>
+        </p>
+        <p>
+          <strong>অনুত্তরিত:</strong>
+          <span style="color: #ffc801" id="unanswered"></span>
+        </p>
+        <p><strong>তোমার চূড়ান্ত স্কোর:</strong></p>
+        <h2 style="color: #1b0b54"><span id="finalScore"></span></h2>
+        <form id="scoreForm" action="https://formspree.io/f/xpby" method="POST">
+          <input type="hidden" name="userID" id="formUserID" />
+          <input type="hidden" name="finalScore" id="formFinalScore" />
+          <input type="hidden" name="correctAnswers" id="formCorrectAnswers" />
+          <input type="hidden" name="wrongAnswers" id="formWrongAnswers" />
+          <input type="hidden" name="unanswered" id="formUnanswered" />
+          <button
+            type="submit"
+            class="confirm-btn"
+            style="background-color: #1b0b54"
+          >
+            <b>ওকে</b>
+          </button>
+        </form>
+      </div>
+    </div>
+
+    <div class="popup" id="confirmPopup">
+      <div class="popup-header">কনফার্ম করো</div>
+      <div class="popup-body">
+        <p>
+          ভালো করে দেখে নাও! <br />
+          পরীক্ষা শেষ করতে চাও তো?
+        </p>
+        <button class="confirm-btn" onclick="confirmSubmit()">
+          <b>হ্যাঁ</b>
+        </button>
+        <button class="cancel-btn" onclick="cancelSubmit()"><b>না</b></button>
+      </div>
+    </div>
+
+    <script>
+      let chartInstance = null;
+
+      document.addEventListener("DOMContentLoaded", function () {
+        console.log("DOM fully loaded and parsed");
+        const examContainer = document.getElementById("examContainer");
+        if (!examContainer) {
+          console.error("Exam container not found!");
+          return;
+        }
+        try {
+          sessionStorage.setItem("isLoggedIn", "true");
+          sessionStorage.setItem("userID", "anonymous");
+          console.log(
+            "Session storage set: isLoggedIn = true, userID = anonymous"
+          );
+        } catch (e) {
+          console.error("Session storage error:", e);
+        }
+        examContainer.style.display = "block";
+        console.log("Exam container displayed");
+        startTimer();
+        generateQuestions();
+
+        window.addEventListener("beforeunload", function (event) {
+          if (
+            examContainer.style.display === "block" &&
+            sessionStorage.getItem("isLoggedIn") === "true"
+          ) {
+            autoSubmitScore();
+          }
+        });
+      });
+
+      const questions = [
+        {
+          id: 1,
+          question: "Choose the appropriate antonym for 'abundant'.",
+          options: {
+            a: "Ample",
+            b: "Overflowing",
+            c: "Scarce",
+            d: "Copious",
+          },
+          correct: "c",
+          explanation:
+            "<p>Antonym হলো একটি শব্দের বিপরীত অর্থ প্রকাশক শব্দ। 'Abundant' অর্থ প্রচুর, পর্যাপ্ত বা প্রাচুর্যপূর্ণ।</p><br><p><b>ব্যাখ্যা:</b></p><ul><li><b>(A) Ample:</b> 'Ample' (প্রচুর) হলো 'abundant' এর একটি Synonym (সমার্থক শব্দ)।</li><li><b>(B) Overflowing:</b> 'Overflowing' (উপচে পড়া) হলো 'abundant' এর কাছাকাছি অর্থ প্রকাশক, যা প্রাচুর্য বোঝায়।</li><li><b>(C) Scarce:</b> 'Scarce' (দুর্লভ, অপ্রতুল) হলো 'abundant' এর Antonym (বিপরীত শব্দ)। এটি কোনো কিছুর অভাব বা স্বল্পতা বোঝায়।</li><li><b>(D) Copious:</b> 'Copious' (প্রচুর, রাশি রাশি) হলো 'abundant' এর একটি Synonym (সমার্থক শব্দ)।</li></ul>",
+        },
+        {
+          id: 2,
+          question: "Which word is closest in meaning to 'abettor'?",
+          options: {
+            a: "encourager",
+            b: "gambler",
+            c: "accomplice",
+            d: "aggressive",
+          },
+          correct: "c",
+          explanation:
+            "<p>'Abettor' অর্থ কোনো অপরাধ বা খারাপ কাজে সাহায্যকারী বা উস্কানিদাতা।</p><br><p><b>ব্যাখ্যা:</b></p><ul><li><b>(A) Encourager:</b> 'Encourager' (উৎসাহদাতা) শব্দটি সাধারণত ভালো কাজের ক্ষেত্রে ব্যবহৃত হয়।</li><li><b>(B) Gambler:</b> 'Gambler' (জুয়াড়ি) হলো যে জুয়া খেলে।</li><li><b>(C) Accomplice:</b> 'Accomplice' (অপরাধের সহযোগী) হলো 'abettor' এর সবচেয়ে কাছের অর্থ প্রকাশক শব্দ। এটি সাধারণত কোনো অপরাধমূলক কাজে সাহায্যকারী ব্যক্তিকে বোঝায়।</li><li><b>(D) Aggressive:</b> 'Aggressive' (আক্রমণাত্মক) হলো একটি গুণবাচক শব্দ, যা 'abettor' এর অর্থ প্রকাশ করে না।</li></ul>",
+        },
+        {
+          id: 3,
+          question: "The synonym for 'Ascent' is-",
+          options: {
+            a: "Bow down",
+            b: "Further",
+            c: "Jump",
+            d: "Regress",
+          },
+          correct: "b",
+          explanation:
+            "<p>Synonym হলো একটি শব্দের সমার্থক শব্দ। 'Ascent' অর্থ আরোহণ, উপরের দিকে ওঠা বা উন্নতি।</p><br><p><b>ব্যাখ্যা:</b></p><ul><li><b>(A) Bow down:</b> 'Bow down' (নত হওয়া) হলো 'Ascent' এর বিপরীত।</li><li><b>(B) Further:</b> 'Further' (আরও অগ্রসর হওয়া, এগিয়ে যাওয়া) 'Ascent' এর সাথে সামঞ্জস্যপূর্ণ, কারণ 'Ascent' অর্থ উন্নতি বা উপরের দিকে ওঠা। এখানে 'Further' বলতে উন্নতি বা অগ্রগতি বোঝানো হয়েছে, যা 'Ascent' এর একটি পরোক্ষ সমার্থক। তবে, সরাসরি সমার্থক শব্দ হিসেবে 'climb' বা 'rise' বেশি উপযুক্ত। কিন্তু প্রদত্ত অপশনগুলোর মধ্যে 'Further' একমাত্র যা উন্নতির দিকে ইঙ্গিত করে। <i>[দ্রষ্টব্য: এই প্রশ্নের উত্তরটি নিয়ে কিছু বিতর্ক থাকতে পারে, কারণ 'further' সরাসরি 'ascent' এর সমার্থক নয়। তবে, অন্য অপশনগুলো সম্পূর্ণ ভিন্ন অর্থ প্রকাশ করে।]</i></li><li><b>(C) Jump:</b> 'Jump' (লাফানো) ভিন্ন অর্থ প্রকাশ করে।</li><li><b>(D) Regress:</b> 'Regress' (পিছিয়ে যাওয়া, অবনতি হওয়া) হলো 'Ascent' এর Antonym (বিপরীত শব্দ)।</li></ul>",
+        },
+        {
+          id: 4,
+          question: "Synonym for the word 'Accuracy' is-",
+          options: {
+            a: "Authenticity",
+            b: "Reality",
+            c: "Perfection",
+            d: "Precision",
+          },
+          correct: "d",
+          explanation:
+            "<p>Synonym হলো একটি শব্দের সমার্থক শব্দ। 'Accuracy' অর্থ নির্ভুলতা, সঠিকতা।</p><br><p><b>ব্যাখ্যা:</b></p><ul><li><b>(A) Authenticity:</b> 'Authenticity' (প্রামাণিকতা) অর্থ আসল বা খাঁটি হওয়া।</li><li><b>(B) Reality:</b> 'Reality' (বাস্তবতা) অর্থ যা বিদ্যমান।</li><li><b>(C) Perfection:</b> 'Perfection' (পূর্ণতা) অর্থ নিখুঁত হওয়া। এটি 'accuracy' এর কাছাকাছি হলেও সরাসরি সমার্থক নয়।</li><li><b>(D) Precision:</b> 'Precision' (সূক্ষ্মতা, নির্ভুলতা) হলো 'Accuracy' এর সবচেয়ে কাছের সমার্থক শব্দ। এটি ত্রুটিহীনতা এবং নিখুঁতভাবে সঠিক হওয়া বোঝায়।</li></ul>",
+        },
+        {
+          id: 5,
+          question: "Antonym for 'Aware' is -",
+          options: {
+            a: "Harmony",
+            b: "Kindliness",
+            c: "Ignorant",
+            d: "Retain",
+          },
+          correct: "c",
+          explanation:
+            "<p>Antonym হলো একটি শব্দের বিপরীত অর্থ প্রকাশক শব্দ। 'Aware' অর্থ সচেতন, অবগত।</p><br><p><b>ব্যাখ্যা:</b></p><ul><li><b>(A) Harmony:</b> 'Harmony' (সমন্বয়) ভিন্ন অর্থ প্রকাশ করে।</li><li><b>(B) Kindliness:</b> 'Kindliness' (দয়ালুতা) ভিন্ন অর্থ প্রকাশ করে।</li><li><b>(C) Ignorant:</b> 'Ignorant' (অজ্ঞ, অসচেতন) হলো 'Aware' এর Antonym (বিপরীত শব্দ)। এটি কোনো বিষয় সম্পর্কে জ্ঞান বা সচেতনতার অভাব বোঝায়।</li><li><b>(D) Retain:</b> 'Retain' (ধরে রাখা) ভিন্ন অর্থ প্রকাশ করে।</li></ul>",
+        },
+        {
+          id: 6,
+          question: "Which of the following sets contains correct meaning?",
+          options: {
+            a: "Antipathy: Strong dislike",
+            b: "Collide: Indifferent",
+            c: "Bequeath: Determined to go",
+            d: "Devolve: Without",
+          },
+          correct: "a",
+          explanation:
+            "<p>প্রশ্নটি চারটি শব্দ এবং তাদের প্রস্তাবিত অর্থের সেট থেকে সঠিক সেটটি চিহ্নিত করতে বলছে।</p><br><p><b>ব্যাখ্যা:</b></p><ul><li><b>(A) Antipathy: Strong dislike:</b> 'Antipathy' অর্থ তীব্র অপছন্দ বা ঘৃণা। তাই এই সেটটি সঠিক।</li><li><b>(B) Collide: Indifferent:</b> 'Collide' অর্থ সংঘর্ষ হওয়া। 'Indifferent' অর্থ উদাসীন। অর্থ দুটি একে অপরের থেকে সম্পূর্ণ ভিন্ন।</li><li><b>(C) Bequeath: Determined to go:</b> 'Bequeath' অর্থ উইল করে সম্পত্তি দান করা। 'Determined to go' অর্থ যেতে বদ্ধপরিকর। অর্থ দুটি একে অপরের থেকে সম্পূর্ণ ভিন্ন।</li><li><b>(D) Devolve: Without:</b> 'Devolve' অর্থ ক্ষমতা বা দায়িত্ব হস্তান্তর করা। 'Without' অর্থ ছাড়া। অর্থ দুটি একে অপরের থেকে সম্পূর্ণ ভিন্ন।</li></ul>",
+        },
+        {
+          id: 7,
+          question: "Pick the word that is synonymous with 'Authoritarian'.",
+          options: {
+            a: "Autocratic",
+            b: "Senior",
+            c: "Elderly",
+            d: "Potential",
+          },
+          correct: "a",
+          explanation:
+            "<p>Synonym হলো একটি শব্দের সমার্থক শব্দ। 'Authoritarian' অর্থ স্বৈরাচারী, কর্তৃত্বপরায়ণ বা কঠোর নিয়ম মানা।</p><br><p><b>ব্যাখ্যা:</b></p><ul><li><b>(A) Autocratic:</b> 'Autocratic' (স্বৈরাচারী) হলো 'Authoritarian' এর সবচেয়ে কাছের সমার্থক শব্দ। এটি এমন এক শাসনব্যবস্থা বা ব্যক্তিকে বোঝায় যেখানে সকল ক্ষমতা এক ব্যক্তির হাতে কেন্দ্রীভূত এবং তিনি কোনো জবাবদিহিতা ছাড়াই শাসন করেন।</li><li><b>(B) Senior:</b> 'Senior' (জ্যেষ্ঠ) অর্থ বয়সে বা পদে বড়।</li><li><b>(C) Elderly:</b> 'Elderly' (বয়স্ক) অর্থ বৃদ্ধ।</li><li><b>(D) Potential:</b> 'Potential' (সম্ভাব্য) অর্থ কোনো কিছুর সম্ভাবনা বা সামর্থ্য।</li></ul>",
+        },
+        {
+          id: 8,
+          question: "Which is similar in meaning to the word 'Appease'?",
+          options: {
+            a: "Resourceful",
+            b: "Placate",
+            c: "Meander",
+            d: "Enrage",
+          },
+          correct: "b",
+          explanation:
+            "<p>Synonym হলো একটি শব্দের সমার্থক শব্দ। 'Appease' অর্থ শান্ত করা, তুষ্ট করা বা রাগ কমানো।</p><br><p><b>ব্যাখ্যা:</b></p><ul><li><b>(A) Resourceful:</b> 'Resourceful' (সম্পদশালী বা বুদ্ধিমান) অর্থ সমস্যা সমাধানে পারদর্শী।</li><li><b>(B) Placate:</b> 'Placate' (শান্ত করা, তুষ্ট করা) হলো 'Appease' এর সবচেয়ে কাছের সমার্থক শব্দ। এটি কারো রাগ বা বিরক্তি কমানো বোঝায়।</li><li><b>(C) Meander:</b> 'Meander' (এঁকেবেঁকে চলা) অর্থ উদ্দেশ্যহীনভাবে ঘোরাঘুরি করা।</li><li><b>(D) Enrage:</b> 'Enrage' (ক্রোধিত করা) হলো 'Appease' এর Antonym (বিপরীত শব্দ)।</li></ul>",
+        },
+        {
+          id: 9,
+          question: "Synonym of the word 'Annoy' is-",
+          options: {
+            a: "Irritate",
+            b: "Invest",
+            c: "Fight",
+            d: "Frighten",
+          },
+          correct: "a",
+          explanation:
+            "<p>Synonym হলো একটি শব্দের সমার্থক শব্দ। 'Annoy' অর্থ বিরক্ত করা, জ্বালাতন করা।</p><br><p><b>ব্যাখ্যা:</b></p><ul><li><b>(A) Irritate:</b> 'Irritate' (বিরক্ত করা, জ্বালাতন করা) হলো 'Annoy' এর সবচেয়ে কাছের সমার্থক শব্দ।</li><li><b>(B) Invest:</b> 'Invest' (বিনিয়োগ করা) ভিন্ন অর্থ প্রকাশ করে।</li><li><b>(C) Fight:</b> 'Fight' (লড়াই করা) ভিন্ন অর্থ প্রকাশ করে।</li><li><b>(D) Frighten:</b> 'Frighten' (ভয় দেখানো) ভিন্ন অর্থ প্রকাশ করে।</li></ul>",
+        },
+        {
+          id: 10,
+          question:
+            "Affluent people have an obligation to care for their neighbors. Substitute the underlined word-",
+          options: {
+            a: "Large",
+            b: "Hard working",
+            c: "Religious",
+            d: "Wealthy",
+          },
+          correct: "d",
+          explanation:
+            "<p>Substitute বলতে সমার্থক শব্দ বাclosest meaning শব্দটি দিয়ে প্রতিস্থাপন করা। এখানে 'Affluent' (প্রচুর সম্পদশালী) শব্দের সমার্থক শব্দ খুঁজে বের করতে হবে।</p><br><p><b>ব্যাখ্যা:</b></p><ul><li><b>(A) Large:</b> 'Large' (বড়) ভিন্ন অর্থ প্রকাশ করে।</li><li><b>(B) Hard working:</b> 'Hard working' (পরিশ্রমী) ভিন্ন অর্থ প্রকাশ করে।</li><li><b>(C) Religious:</b> 'Religious' (ধর্মপ্রাণ) ভিন্ন অর্থ প্রকাশ করে।</li><li><b>(D) Wealthy:</b> 'Wealthy' (ধনী, বিত্তশালী) হলো 'Affluent' এর সবচেয়ে কাছের সমার্থক শব্দ।</li></ul>",
+        },
+        {
+          id: 11,
+          question:
+            "When humming birds fly, their wingbeats are so rapid that the wings seen blurred. Here, the underlined word is closest in meaning to",
+          options: {
+            a: "tiny",
+            b: "fragile",
+            c: "indistinct",
+            d: "Inexaustible",
+          },
+          correct: "c",
+          explanation:
+            "<p>এখানে 'blurred' অর্থ অস্পষ্ট, ঝাপসা।</p><br><p><b>ব্যাখ্যা:</b></p><ul><li><b>(A) tiny:</b> 'Tiny' (ক্ষুদ্র) ভিন্ন অর্থ প্রকাশ করে।</li><li><b>(B) fragile:</b> 'Fragile' (ভঙ্গুর) ভিন্ন অর্থ প্রকাশ করে।</li><li><b>(C) indistinct:</b> 'Indistinct' (অস্পষ্ট, ঝাপসা) হলো 'blurred' এর সবচেয়ে কাছের অর্থ প্রকাশক শব্দ। যখন কোনো কিছু খুব দ্রুত নড়াচড়া করে, তখন তা অস্পষ্ট দেখায়।</li><li><b>(D) Inexhaustible:</b> 'Inexhaustible' (অক্ষয়, অফুরন্ত) ভিন্ন অর্থ প্রকাশ করে।</li></ul>",
+        },
+        {
+          id: 12,
+          question: "The antonym of the word 'amnesty' is-",
+          options: {
+            a: "Eniency",
+            b: "Detention",
+            c: "Absolution",
+            d: "Connivance",
+          },
+          correct: "b",
+          explanation:
+            "<p>Antonym হলো একটি শব্দের বিপরীত অর্থ প্রকাশক শব্দ। 'Amnesty' অর্থ সাধারণ ক্ষমা, রাজক্ষমা বা শাস্তি মওকুফ।</p><br><p><b>ব্যাখ্যা:</b></p><ul><li><b>(A) Eniency:</b> এই শব্দটি ভুল, সম্ভবত 'leniency' বোঝানো হয়েছে, যার অর্থ দয়া বা ক্ষমা। এটি 'amnesty' এর সমার্থক।</li><li><b>(B) Detention:</b> 'Detention' (আটক, কারাবাস) হলো 'amnesty' এর Antonym (বিপরীত শব্দ)। 'Amnesty' যেখানে মুক্তি বা ক্ষমা বোঝায়, সেখানে 'detention' হলো আটকে রাখা বা কারাবাস।</li><li><b>(C) Absolution:</b> 'Absolution' (পাপমোচন, ক্ষমা) হলো 'amnesty' এর একটি Synonym (সমার্থক শব্দ)।</li><li><b>(D) Connivance:</b> 'Connivance' (চোখ বুজে থাকা, পরোক্ষ সমর্থন) ভিন্ন অর্থ প্রকাশ করে।</li></ul>",
+        },
+        {
+          id: 13,
+          question: 'The word "Amenable" means',
+          options: {
+            a: "Moveable",
+            b: "Durable",
+            c: "Agreeable",
+            d: "Answerable",
+          },
+          correct: "c",
+          explanation:
+            "<p>'Amenable' অর্থ বাধ্য, সহজে প্রভাবিত করা যায় এমন বা গ্রহণযোগ্য।</p><br><p><b>ব্যাখ্যা:</b></p><ul><li><b>(A) Moveable:</b> 'Moveable' (চলনশীল) ভিন্ন অর্থ প্রকাশ করে।</li><li><b>(B) Durable:</b> 'Durable' (টেকসই) ভিন্ন অর্থ প্রকাশ করে।</li><li><b>(C) Agreeable:</b> 'Agreeable' (সম্মত, মান্যকারী) হলো 'Amenable' এর সবচেয়ে কাছের অর্থ প্রকাশক শব্দ। এটি এমন ব্যক্তিকে বোঝায় যে সহজে মানিয়ে নেয় বা প্রস্তাব গ্রহণ করে।</li><li><b>(D) Answerable:</b> 'Answerable' (জবাবদিহি) ভিন্ন অর্থ প্রকাশ করে।</li></ul>",
+        },
+        {
+          id: 14,
+          question: "Auspicious means-",
+          options: {
+            a: "Supernatural",
+            b: "Durable",
+            c: "Fortunate",
+            d: "Answerable",
+          },
+          correct: "c",
+          explanation:
+            "<p>'Auspicious' অর্থ শুভ, মঙ্গলজনক বা অনুকূল।</p><br><p><b>ব্যাখ্যা:</b></p><ul><li><b>(A) Supernatural:</b> 'Supernatural' (অতিপ্রাকৃতিক) ভিন্ন অর্থ প্রকাশ করে।</li><li><b>(B) Durable:</b> 'Durable' (টেকসই) ভিন্ন অর্থ প্রকাশ করে।</li><li><b>(C) Fortunate:</b> 'Fortunate' (ভাগ্যবান, শুভ) হলো 'Auspicious' এর সবচেয়ে কাছের অর্থ প্রকাশক শব্দ। এটি ইতিবাচক ফলাফল বা সাফল্যের সম্ভাবনা বোঝায়।</li><li><b>(D) Answerable:</b> 'Answerable' (জবাবদিহি) ভিন্ন অর্থ প্রকাশ করে।</li></ul>",
+        },
+        {
+          id: 15,
+          question: "Assemble means-",
+          options: {
+            a: "Unite",
+            b: "Disperse",
+            c: "Separate",
+            d: "Split",
+          },
+          correct: "a",
+          explanation:
+            "<p>'Assemble' অর্থ একত্রিত করা, জড়ো করা বা জোড়া লাগানো।</p><br><p><b>ব্যাখ্যা:</b></p><ul><li><b>(A) Unite:</b> 'Unite' (একত্রিত করা, মিলিত করা) হলো 'Assemble' এর সবচেয়ে কাছের সমার্থক শব্দ।</li><li><b>(B) Disperse:</b> 'Disperse' (ছড়িয়ে দেওয়া, ছত্রভঙ্গ করা) হলো 'Assemble' এর Antonym (বিপরীত শব্দ)।</li><li><b>(C) Separate:</b> 'Separate' (পৃথক করা) হলো 'Assemble' এর Antonym (বিপরীত শব্দ)।</li><li><b>(D) Split:</b> 'Split' (বিভক্ত করা) হলো 'Assemble' এর Antonym (বিপরীত শব্দ)।</li></ul>",
+        },
+        {
+          id: 16,
+          question:
+            "Choose the word that is closest in meaning to the word in italics: Sweet are the uses of <i>adversity</i>.",
+          options: {
+            a: "university",
+            b: "publicity",
+            c: "uncertainty",
+            d: "difficulty",
+          },
+          correct: "d",
+          explanation:
+            "<p>এখানে 'adversity' অর্থ প্রতিকূলতা, দুর্ভাগ্য বা কষ্টকর পরিস্থিতি।</p><br><p><b>ব্যাখ্যা:</b></p><ul><li><b>(A) university:</b> 'University' (বিশ্ববিদ্যালয়) ভিন্ন অর্থ প্রকাশ করে।</li><li><b>(B) publicity:</b> 'Publicity' (প্রচার) ভিন্ন অর্থ প্রকাশ করে।</li><li><b>(C) uncertainty:</b> 'Uncertainty' (অনিশ্চয়তা) অর্থ কোনো কিছুর অনিশ্চিত অবস্থা। এটি 'adversity' এর মতো সরাসরি কষ্টকর পরিস্থিতি বোঝায় না।</li><li><b>(D) difficulty:</b> 'Difficulty' (কষ্ট, অসুবিধা) হলো 'adversity' এর সবচেয়ে কাছের অর্থ প্রকাশক শব্দ। 'Uses of adversity' বলতে প্রতিকূলতার মধ্য দিয়ে শেখা বা প্রাপ্ত শিক্ষাকে বোঝায়।</li></ul>",
+        },
+        {
+          id: 17,
+          question: "Which one is not a synonym for 'Anxiety'?",
+          options: {
+            a: "Disquiet",
+            b: "Apprehension",
+            c: "Indifference",
+            d: "Unease",
+          },
+          correct: "c",
+          explanation:
+            "<p>প্রশ্নটি জানতে চেয়েছে কোনটি 'Anxiety' এর সমার্থক শব্দ নয়। 'Anxiety' অর্থ উদ্বেগ, দুশ্চিন্তা বা অস্থিরতা।</p><br><p><b>ব্যাখ্যা:</b></p><ul><li><b>(A) Disquiet:</b> 'Disquiet' (অস্থিরতা, উদ্বেগ) হলো 'Anxiety' এর Synonym (সমার্থক শব্দ)।</li><li><b>(B) Apprehension:</b> 'Apprehension' (আশঙ্কা, উদ্বেগ) হলো 'Anxiety' এর Synonym (সমার্থক শব্দ)।</li><li><b>(C) Indifference:</b> 'Indifference' (উদাসীনতা, ঔদাসীন্য) হলো 'Anxiety' এর Antonym (বিপরীত শব্দ)। এটি কোনো বিষয়ে আগ্রহ বা উদ্বেগের অভাব বোঝায়।</li><li><b>(D) Unease:</b> 'Unease' (অস্বস্তি, অস্বাচ্ছন্দ্য) হলো 'Anxiety' এর Synonym (সমার্থক শব্দ)।</li></ul>",
+        },
+        {
+          id: 18,
+          question: "The correct synonym of the word 'Astute' is-",
+          options: {
+            a: "Autistic",
+            b: "Shrewd",
+            c: "Economic",
+            d: "Acute",
+          },
+          correct: "b",
+          explanation:
+            "<p>Synonym হলো একটি শব্দের সমার্থক শব্দ। 'Astute' অর্থ চতুর, ধূর্ত বা তীক্ষ্ণ বুদ্ধি সম্পন্ন।</p><br><p><b>ব্যাখ্যা:</b></p><ul><li><b>(A) Autistic:</b> 'Autistic' (অটিস্টিক) হলো একটি মানসিক অবস্থার সাথে সম্পর্কিত। ভিন্ন অর্থ প্রকাশ করে।</li><li><b>(B) Shrewd:</b> 'Shrewd' (চতুর, ধূর্ত, বিচক্ষণ) হলো 'Astute' এর সবচেয়ে কাছের সমার্থক শব্দ। এটি বাস্তবসম্মত জ্ঞান এবং বিচক্ষণতার মাধ্যমে সুবিধা লাভ করা বোঝায়।</li><li><b>(C) Economic:</b> 'Economic' (অর্থনৈতিক) ভিন্ন অর্থ প্রকাশ করে।</li><li><b>(D) Acute:</b> 'Acute' (তীব্র, তীক্ষ্ণ) হলো ভিন্ন অর্থ প্রকাশ করে। এটি বুদ্ধির তীক্ষ্ণতা বোঝাতে পারে, কিন্তু 'astute' এর মতো চালাকি বা বিচক্ষণতা বোঝায় না।</li></ul>",
+        },
+        {
+          id: 19,
+          question: "What does the word 'Amicable' mean?",
+          options: {
+            a: "Interesting",
+            b: "Loving",
+            c: "Affectionate",
+            d: "Friendly",
+          },
+          correct: "d",
+          explanation:
+            "<p>'Amicable' অর্থ বন্ধুত্বপূর্ণ, শান্তিপ্রিয় বা সৌহার্দ্যপূর্ণ।</p><br><p><b>ব্যাখ্যা:</b></p><ul><li><b>(A) Interesting:</b> 'Interesting' (আকর্ষণীয়) ভিন্ন অর্থ প্রকাশ করে।</li><li><b>(B) Loving:</b> 'Loving' (প্রেমময়) অর্থ ভালোবাসা প্রকাশ করা। এটি 'amicable' এর কাছাকাছি হলেও 'friendly' বেশি উপযুক্ত।</li><li><b>(C) Affectionate:</b> 'Affectionate' (স্নেহময়) অর্থ স্নেহ বা মমতা প্রকাশ করা। এটিও 'amicable' এর কাছাকাছি, তবে 'friendly' এর সাধারণ অর্থ বেশি মিলে যায়।</li><li><b>(D) Friendly:</b> 'Friendly' (বন্ধুত্বপূর্ণ) হলো 'Amicable' এর সবচেয়ে কাছের অর্থ প্রকাশক শব্দ। এটি কারো সাথে বন্ধুত্বপূর্ণ সম্পর্ক বোঝায়।</li></ul>",
+        },
+        {
+          id: 20,
+          question: "Which is the synonym of 'ATROCITY'?",
+          options: {
+            a: "Endurance",
+            b: "Heinous act",
+            c: "Uprightness",
+            d: "Hatred",
+          },
+          correct: "b",
+          explanation:
+            "<p>Synonym হলো একটি শব্দের সমার্থক শব্দ। 'Atrocity' অর্থ নৃশংসতা, বর্বরতা বা জঘন্য কাজ।</p><br><p><b>ব্যাখ্যা:</b></p><ul><li><b>(A) Endurance:</b> 'Endurance' (সহনশীলতা) ভিন্ন অর্থ প্রকাশ করে।</li><li><b>(B) Heinous act:</b> 'Heinous act' (জঘন্য কাজ) হলো 'Atrocity' এর সবচেয়ে কাছের সমার্থক শব্দ। এটি অত্যন্ত নিষ্ঠুর এবং অনৈতিক কাজকে বোঝায়।</li><li><b>(C) Uprightness:</b> 'Uprightness' (সততা, ন্যায়পরায়ণতা) হলো 'Atrocity' এর Antonym (বিপরীত শব্দ)।</li><li><b>(D) Hatred:</b> 'Hatred' (ঘৃণা) একটি অনুভূতি, কাজের বর্ণনা নয়।</li></ul>",
+        },
+        {
+          id: 21,
+          question: "The antonym of ABNORMAL is-",
+          options: {
+            a: "Weird",
+            b: "Wild",
+            c: "Calm",
+            d: "Typical",
+          },
+          correct: "d",
+          explanation:
+            "<p>Antonym হলো একটি শব্দের বিপরীত অর্থ প্রকাশক শব্দ। 'Abnormal' অর্থ অস্বাভাবিক, অস্বাভাবিক বা ব্যতিক্রমী।</p><br><p><b>ব্যাখ্যা:</b></p><ul><li><b>(A) Weird:</b> 'Weird' (অদ্ভুত) হলো 'abnormal' এর একটি Synonym (সমার্থক শব্দ)।</li><li><b>(B) Wild:</b> 'Wild' (বন্য) ভিন্ন অর্থ প্রকাশ করে।</li><li><b>(C) Calm:</b> 'Calm' (শান্ত) ভিন্ন অর্থ প্রকাশ করে।</li><li><b>(D) Typical:</b> 'Typical' (সাধারণ, স্বাভাবিক) হলো 'Abnormal' এর Antonym (বিপরীত শব্দ)। এটি স্বাভাবিক বা প্রথাগত কিছুকে বোঝায়।</li></ul>",
+        },
+        {
+          id: 22,
+          question: "The synonym of 'Antithesis'-",
+          options: {
+            a: "Contract",
+            b: "Examination",
+            c: "Conclusion",
+            d: "Opposite",
+          },
+          correct: "d",
+          explanation:
+            "<p>Synonym হলো একটি শব্দের সমার্থক শব্দ। 'Antithesis' অর্থ বিপরীত, প্রতিপক্ষ বা বিপরীত ধারণা।</p><br><p><b>ব্যাখ্যা:</b></p><ul><li><b>(A) Contract:</b> 'Contract' (চুক্তি) ভিন্ন অর্থ প্রকাশ করে।</li><li><b>(B) Examination:</b> 'Examination' (পরীক্ষা) ভিন্ন অর্থ প্রকাশ করে।</li><li><b>(C) Conclusion:</b> 'Conclusion' (উপসংহার) ভিন্ন অর্থ প্রকাশ করে।</li><li><b>(D) Opposite:</b> 'Opposite' (বিপরীত) হলো 'Antithesis' এর সবচেয়ে কাছের সমার্থক শব্দ।</li></ul>",
+        },
+        {
+          id: 23,
+          question: "Which one is the antonym of 'affable'?",
+          options: {
+            a: "Equip",
+            b: "Gather",
+            c: "Segregate",
+            d: "Generate",
+          },
+          correct: "c",
+          explanation:
+            "<p>Antonym হলো একটি শব্দের বিপরীত অর্থ প্রকাশক শব্দ। 'Affable' অর্থ মিশুক, বন্ধুত্বপূর্ণ বা সহজলভ্য। এখানে অপশনগুলো 'affable' এর বিপরীত নয়, সম্ভবত প্রশ্নটিতে ভুল আছে অথবা অপশনগুলো অন্য কোনো শব্দের জন্য দেওয়া হয়েছে। সাধারণত 'affable' এর বিপরীত শব্দগুলো হলো 'unfriendly', 'aloof', 'reserved'।</p><br><p>তবে, যদি 'affable' এর ক্রিয়ারূপের বিপরীত শব্দ চাওয়া হয়, তাহলে 'segregate' (পৃথক করা) কে একটি সম্ভাব্য বিপরীত অর্থে ধরা যেতে পারে, কারণ 'affable' সম্পর্ক তৈরি করতে সাহায্য করে, আর 'segregate' সম্পর্ক ভেঙে দেয় বা পৃথক করে। কিন্তু এটি সরাসরি antonym নয়। প্রশ্নটি একটি ভুল ধারণার উপর ভিত্তি করে তৈরি হয়েছে বলে মনে হচ্ছে। এই অপশনগুলোর মধ্যে কোনটাই সরাসরি 'affable' এর antonym নয়।</p><br><p><b>ব্যাখ্যা (সংশোধিত):</b> এখানে প্রদত্ত অপশনগুলোর মধ্যে কোনটিই 'affable' এর সরাসরি antonym নয়। 'Affable' এর antonym হবে 'unfriendly', 'aloof', 'reserved', 'unpleasant'। প্রশ্ন এবং অপশন ভুল থাকার কারণে এই উত্তরটি দেওয়া হয়েছে। যদি প্রশ্নটি অন্য কিছু বোঝাতো, তাহলে উত্তর ভিন্ন হতে পারতো।</p><ul><li><b>(A) Equip:</b> (সজ্জিত করা)</li><li><b>(B) Gather:</b> (জড়ো করা)</li><li><b>(C) Segregate:</b> (পৃথক করা)</li><li><b>(D) Generate:</b> (উৎপন্ন করা)</li></ul>",
+        },
+        {
+          id: 24,
+          question: "Abash means",
+          options: {
+            a: "Abridge",
+            b: "Shame",
+            c: "Lessen",
+            d: "Allay",
+          },
+          correct: "b",
+          explanation:
+            "<p>'Abash' অর্থ লজ্জিত করা, বিব্রত করা বা হেয় করা।</p><br><p><b>ব্যাখ্যা:</b></p><ul><li><b>(A) Abridge:</b> 'Abridge' (সংক্ষিপ্ত করা) ভিন্ন অর্থ প্রকাশ করে।</li><li><b>(B) Shame:</b> 'Shame' (লজ্জা দেওয়া, লজ্জিত করা) হলো 'Abash' এর সবচেয়ে কাছের অর্থ প্রকাশক শব্দ।</li><li><b>(C) Lessen:</b> 'Lessen' (কমানো) ভিন্ন অর্থ প্রকাশ করে।</li><li><b>(D) Allay:</b> 'Allay' (প্রশমিত করা, উপশম করা) ভিন্ন অর্থ প্রকাশ করে।</li></ul>",
+        },
+        {
+          id: 25,
+          question: "The synonym of the word 'Anarchy' is -",
+          options: {
+            a: "lawlessness",
+            b: "order",
+            c: "discipline",
+            d: "democracy",
+          },
+          correct: "a",
+          explanation:
+            "<p>Synonym হলো একটি শব্দের সমার্থক শব্দ। 'Anarchy' অর্থ অরাজকতা, বিশৃঙ্খলা বা আইনহীনতা।</p><br><p><b>ব্যাখ্যা:</b></p><ul><li><b>(A) lawlessness:</b> 'Lawlessness' (আইনহীনতা) হলো 'Anarchy' এর সবচেয়ে কাছের সমার্থক শব্দ।</li><li><b>(B) order:</b> 'Order' (শৃঙ্খলা) হলো 'Anarchy' এর Antonym (বিপরীত শব্দ)।</li><li><b>(C) discipline:</b> 'Discipline' (শৃঙ্খলা) হলো 'Anarchy' এর Antonym (বিপরীত শব্দ)।</li><li><b>(D) democracy:</b> 'Democracy' (গণতন্ত্র) হলো একটি শাসনব্যবস্থা, যা 'Anarchy' এর বিপরীত।</li></ul>",
+        },
+        {
+          id: 26,
+          question: "An antonym of the word 'awful' is -",
+          options: {
+            a: "unpleasant",
+            b: "awake",
+            c: "wonderful",
+            d: "terrible",
+          },
+          correct: "c",
+          explanation:
+            "<p>Antonym হলো একটি শব্দের বিপরীত অর্থ প্রকাশক শব্দ। 'Awful' অর্থ ভয়ংকর, জঘন্য বা খারাপ।</p><br><p><b>ব্যাখ্যা:</b></p><ul><li><b>(A) unpleasant:</b> 'Unpleasant' (অপ্রীতিকর) হলো 'awful' এর একটি Synonym (সমার্থক শব্দ)।</li><li><b>(B) awake:</b> 'Awake' (জাগ্রত) ভিন্ন অর্থ প্রকাশ করে।</li><li><b>(C) wonderful:</b> 'Wonderful' (চমৎকার, অসাধারণ) হলো 'Awful' এর Antonym (বিপরীত শব্দ)।</li><li><b>(D) terrible:</b> 'Terrible' (ভয়ংকর, জঘন্য) হলো 'awful' এর একটি Synonym (সমার্থক শব্দ)।</li></ul>",
+        },
+        {
+          id: 27,
+          question: "What is a synonym of 'animosity'?",
+          options: {
+            a: "harmony",
+            b: "enmity",
+            c: "serenity",
+            d: "amity",
+          },
+          correct: "b",
+          explanation:
+            "<p>Synonym হলো একটি শব্দের সমার্থক শব্দ। 'Animosity' অর্থ শত্রুতা, বিদ্বেষ বা তীব্র ঘৃণা।</p><br><p><b>ব্যাখ্যা:</b></p><ul><li><b>(A) harmony:</b> 'Harmony' (সমন্বয়, সম্প্রীতি) হলো 'animosity' এর Antonym (বিপরীত শব্দ)।</li><li><b>(B) enmity:</b> 'Enmity' (শত্রুতা, বিদ্বেষ) হলো 'Animosity' এর সবচেয়ে কাছের সমার্থক শব্দ।</li><li><b>(C) serenity:</b> 'Serenity' (শান্তি, প্রশান্তি) ভিন্ন অর্থ প্রকাশ করে।</li><li><b>(D) amity:</b> 'Amity' (বন্ধুত্ব, সদ্ভাব) হলো 'animosity' এর Antonym (বিপরীত শব্দ)।</li></ul>",
+        },
+        {
+          id: 28,
+          question: "The synonym of the word 'anarchy' is-",
+          options: {
+            a: "discipline",
+            b: "lawlessness",
+            c: "placidity",
+            d: "serenity",
+          },
+          correct: "b",
+          explanation:
+            "<p>Synonym হলো একটি শব্দের সমার্থক শব্দ। 'Anarchy' অর্থ অরাজকতা, বিশৃঙ্খলা বা আইনহীনতা।</p><br><p><b>ব্যাখ্যা:</b></p><ul><li><b>(A) discipline:</b> 'Discipline' (শৃঙ্খলা) হলো 'anarchy' এর Antonym (বিপরীত শব্দ)।</li><li><b>(B) lawlessness:</b> 'Lawlessness' (আইনহীনতা) হলো 'Anarchy' এর সবচেয়ে কাছের সমার্থক শব্দ।</li><li><b>(C) placidity:</b> 'Placidity' (শান্তি, স্থিরতা) ভিন্ন অর্থ প্রকাশ করে।</li><li><b>(D) serenity:</b> 'Serenity' (শান্তি, প্রশান্তি) ভিন্ন অর্থ প্রকাশ করে।</li></ul>",
+        },
+        {
+          id: 29,
+          question: "Synonym of 'Ability' are all of the following except:",
+          options: {
+            a: "Talent",
+            b: "Avail",
+            c: "Skill",
+            d: "Inapt",
+          },
+          correct: "d",
+          explanation:
+            "<p>প্রশ্নটি জানতে চেয়েছে কোনটি 'Ability' এর সমার্থক শব্দ নয়। 'Ability' অর্থ ক্ষমতা, যোগ্যতা বা দক্ষতা।</p><br><p><b>ব্যাখ্যা:</b></p><ul><li><b>(A) Talent:</b> 'Talent' (প্রতিভা) হলো 'Ability' এর Synonym (সমার্থক শব্দ)।</li><li><b>(B) Avail:</b> 'Avail' (উপকারিতা, সুবিধা) হলো ভিন্ন অর্থ প্রকাশ করে, তবে 'ability' এর কিছু প্রসঙ্গে 'avail' (ব্যবহার) এর সাথে সম্পর্কিত হতে পারে। কিন্তু এটি সরাসরি সমার্থক নয়। <i>[দ্রষ্টব্য: এই প্রশ্নের অপশনগুলো কিছুটা বিভ্রান্তিকর হতে পারে। 'Avail' যখন 'use' বা 'benefit' অর্থে আসে, তখন এটি 'ability' এর সরাসরি সমার্থক নয়। তবে যদি এটি কোনো কাজ করার ক্ষমতা বা সুবিধা বোঝায়, তাহলে হয়তো কাছাকাছি হতে পারে। তবে 'Inapt' নিশ্চিতভাবে antonym।]</i></li><li><b>(C) Skill:</b> 'Skill' (দক্ষতা) হলো 'Ability' এর Synonym (সমার্থক শব্দ)।</li><li><b>(D) Inapt:</b> 'Inapt' (অযোগ্য, অনুপযুক্ত) হলো 'Ability' এর Antonym (বিপরীত শব্দ)। এটি যোগ্যতা বা দক্ষতার অভাব বোঝায়।</li></ul>",
+        },
+        {
+          id: 30,
+          question: "Choose the correct synonym of 'Annihilate'.",
+          options: {
+            a: "Inhale",
+            b: "Destroy",
+            c: "Entertain",
+            d: "Forward",
+          },
+          correct: "b",
+          explanation:
+            "<p>Synonym হলো একটি শব্দের সমার্থক শব্দ। 'Annihilate' অর্থ সম্পূর্ণরূপে ধ্বংস করা, বিলুপ্ত করা বা নিশ্চিহ্ন করা।</p><br><p><b>ব্যাখ্যা:</b></p><ul><li><b>(A) Inhale:</b> 'Inhale' (শ্বাস গ্রহণ করা) ভিন্ন অর্থ প্রকাশ করে।</li><li><b>(B) Destroy:</b> 'Destroy' (ধ্বংস করা) হলো 'Annihilate' এর সবচেয়ে কাছের সমার্থক শব্দ।</li><li><b>(C) Entertain:</b> 'Entertain' (বিনোদন দেওয়া) ভিন্ন অর্থ প্রকাশ করে।</li><li><b>(D) Forward:</b> 'Forward' (সামনে এগিয়ে দেওয়া) ভিন্ন অর্থ প্রকাশ করে।</li></ul>",
+        },
+        {
+          id: 31,
+          question: "What is the antonym of the word 'adverse'?",
+          options: {
+            a: "Unseemly",
+            b: "Misplaced",
+            c: "Favorable",
+          },
+          correct: "c",
+          explanation:
+            "<p>Antonym হলো একটি শব্দের বিপরীত অর্থ প্রকাশক শব্দ। 'Adverse' অর্থ প্রতিকূল, ক্ষতিকর বা বিরূপ।</p><br><p><b>ব্যাখ্যা:</b></p><ul><li><b>(A) Unseemly:</b> 'Unseemly' (অশোভন) ভিন্ন অর্থ প্রকাশ করে।</li><li><b>(B) Misplaced:</b> 'Misplaced' (ভুল জায়গায় রাখা) ভিন্ন অর্থ প্রকাশ করে।</li><li><b>(C) Favorable:</b> 'Favorable' (অনুকূল, সুবিধার) হলো 'Adverse' এর Antonym (বিপরীত শব্দ)। এটি ইতিবাচক বা সুবিধার পরিস্থিতি বোঝায়।</li></ul>",
+        },
+        {
+          id: 32,
+          question: "The opposite of 'accidental' -",
+          options: {
+            a: "intentional",
+            b: "occupational",
+            c: "sensational",
+            d: "chaotic",
+          },
+          correct: "a",
+          explanation:
+            "<p>Opposite হলো একটি শব্দের বিপরীত অর্থ প্রকাশক শব্দ। 'Accidental' অর্থ আকস্মিক, অনিচ্ছাকৃত বা দৈবক্রমে ঘটে যাওয়া।</p><br><p><b>ব্যাখ্যা:</b></p><ul><li><b>(A) intentional:</b> 'Intentional' (ইচ্ছাকৃত) হলো 'Accidental' এর Opposite (বিপরীত শব্দ)। এটি পূর্বপরিকল্পিত বা ইচ্ছাকৃতভাবে করা কিছুকে বোঝায়।</li><li><b>(B) occupational:</b> 'Occupational' (পেশাগত) ভিন্ন অর্থ প্রকাশ করে।</li><li><b>(C) sensational:</b> 'Sensational' (চাঞ্চল্যকর) ভিন্ন অর্থ প্রকাশ করে।</li><li><b>(D) chaotic:</b> 'Chaotic' (বিশৃঙ্খল) ভিন্ন অর্থ প্রকাশ করে।</li></ul>",
+        },
+        {
+          id: 33,
+          question: "What is the antonym of 'abstract'?",
+          options: {
+            a: "abase",
+            b: "concrete",
+            c: "abstruse",
+            d: "refrain",
+          },
+          correct: "b",
+          explanation:
+            "<p>Antonym হলো একটি শব্দের বিপরীত অর্থ প্রকাশক শব্দ। 'Abstract' অর্থ বিমূর্ত, ধারণাগত বা অপ্রত্যক্ষ।</p><br><p><b>ব্যাখ্যা:</b></p><ul><li><b>(A) abase:</b> 'Abase' (অপমানিত করা) ভিন্ন অর্থ প্রকাশ করে।</li><li><b>(B) concrete:</b> 'Concrete' (মূর্ত, বাস্তব, সুনির্দিষ্ট) হলো 'Abstract' এর Antonym (বিপরীত শব্দ)। এটি যা পঞ্চ ইন্দ্রিয় দ্বারা অনুভব করা যায় বা যা বাস্তব অস্তিত্ব আছে এমন কিছুকে বোঝায়।</li><li><b>(C) abstruse:</b> 'Abstruse' (দুর্বোধ্য, জটিল) ভিন্ন অর্থ প্রকাশ করে।</li><li><b>(D) refrain:</b> 'Refrain' (বিরত থাকা) ভিন্ন অর্থ প্রকাশ করে।</li></ul>",
+        },
+        {
+          id: 34,
+          question: "Admire' শব্দের সঠিক antonym নিম্নের কোনটি?",
+          options: {
+            a: "Esteem",
+            b: "Wonder",
+            c: "Indifference",
+            d: "Abhor",
+          },
+          correct: "d",
+          explanation:
+            "<p>Antonym হলো একটি শব্দের বিপরীত অর্থ প্রকাশক শব্দ। 'Admire' অর্থ প্রশংসা করা, মুগ্ধ হওয়া বা শ্রদ্ধা করা।</p><br><p><b>ব্যাখ্যা:</b></p><ul><li><b>(A) Esteem:</b> 'Esteem' (শ্রদ্ধা, সম্মান) হলো 'Admire' এর একটি Synonym (সমার্থক শব্দ)।</li><li><b>(B) Wonder:</b> 'Wonder' (বিস্ময়) ভিন্ন অর্থ প্রকাশ করে।</li><li><b>(C) Indifference:</b> 'Indifference' (উদাসীনতা) অর্থ আগ্রহ বা অনুভূতির অভাব। এটি 'admire' এর সরাসরি বিপরীত নয়, বরং আগ্রহের অভাব বোঝায়।</li><li><b>(D) Abhor:</b> 'Abhor' (ঘৃণা করা, তীব্র অপছন্দ করা) হলো 'Admire' এর সবচেয়ে কাছের Antonym (বিপরীত শব্দ)। 'Admire' যেখানে ইতিবাচক অনুভূতি বোঝায়, 'Abhor' সেখানে তীব্র নেতিবাচক অনুভূতি বোঝায়।</li></ul>",
+        },
+        {
+          id: 35,
+          question: "An antonym of 'artless' is",
+          options: {
+            a: "guileless",
+            b: "gullible",
+            c: "cunning",
+            d: "unassuming",
+          },
+          correct: "c",
+          explanation:
+            "<p>Antonym হলো একটি শব্দের বিপরীত অর্থ প্রকাশক শব্দ। 'Artless' অর্থ সরল, অকপট বা ছলকলাহীন।</p><br><p><b>ব্যাখ্যা:</b></p><ul><li><b>(A) guileless:</b> 'Guileless' (সরল, অকপট) হলো 'artless' এর একটি Synonym (সমার্থক শব্দ)।</li><li><b>(B) gullible:</b> 'Gullible' (সহজে বিশ্বাসপ্রবণ) হলো 'artless' এর কাছাকাছি অর্থ প্রকাশক, কারণ সরল ব্যক্তিরা প্রায়শই সহজে বিশ্বাসপ্রবণ হয়।</li><li><b>(C) cunning:</b> 'Cunning' (ধূর্ত, শঠ) হলো 'Artless' এর Antonym (বিপরীত শব্দ)। এটি ছলনা বা প্রতারণার প্রবণতা বোঝায়।</li><li><b>(D) unassuming:</b> 'Unassuming' (বিনয়ী, নম্র) ভিন্ন অর্থ প্রকাশ করে।</li></ul>",
+        },
+        {
+          id: 36,
+          question: "What is the antonym of 'ancient'?",
+          options: {
+            a: "contemporary",
+            b: "archaic",
+            c: "historic",
+            d: "antiquated",
+          },
+          correct: "a",
+          explanation:
+            "<p>Antonym হলো একটি শব্দের বিপরীত অর্থ প্রকাশক শব্দ। 'Ancient' অর্থ প্রাচীন, পুরাতন বা পুরনো।</p><br><p><b>ব্যাখ্যা:</b></p><ul><li><b>(A) contemporary:</b> 'Contemporary' (সমসাময়িক, আধুনিক) হলো 'Ancient' এর Antonym (বিপরীত শব্দ)। এটি বর্তমান সময়ের বা আধুনিক কিছুকে বোঝায়।</li><li><b>(B) archaic:</b> 'Archaic' (প্রাচীন, অপ্রচলিত) হলো 'ancient' এর একটি Synonym (সমার্থক শব্দ)।</li><li><b>(C) historic:</b> 'Historic' (ঐতিহাসিক) অর্থ ইতিহাসে গুরুত্বপূর্ণ। এটি 'ancient' এর সরাসরি বিপরীত নয়।</li><li><b>(D) antiquated:</b> 'Antiquated' (সেকেলে, পুরনো) হলো 'ancient' এর একটি Synonym (সমার্থক শব্দ)।</li></ul>",
+        },
+        {
+          id: 37,
+          question: "The antonym of 'Assail' is -",
+          options: {
+            a: "Attack",
+            b: "Prevail",
+            c: "Befriend",
+            d: "Fly",
+          },
+          correct: "c",
+          explanation:
+            "<p>Antonym হলো একটি শব্দের বিপরীত অর্থ প্রকাশক শব্দ। 'Assail' অর্থ আক্রমণ করা, ঝাঁপিয়ে পড়া বা তীব্রভাবে সমালোচনা করা।</p><br><p><b>ব্যাখ্যা:</b></p><ul><li><b>(A) Attack:</b> 'Attack' (আক্রমণ করা) হলো 'Assail' এর একটি Synonym (সমার্থক শব্দ)।</li><li><b>(B) Prevail:</b> 'Prevail' (জয়লাভ করা, জয়ী হওয়া) ভিন্ন অর্থ প্রকাশ করে।</li><li><b>(C) Befriend:</b> 'Befriend' (বন্ধুত্ব করা, বন্ধু বানানো) হলো 'Assail' এর Antonym (বিপরীত শব্দ)। 'Assail' যেখানে আক্রমণ বোঝায়, 'Befriend' সেখানে বন্ধুত্বপূর্ণ সম্পর্ক স্থাপন বোঝায়।</li><li><b>(D) Fly:</b> 'Fly' (উড়া) ভিন্ন অর্থ প্রকাশ করে।</li></ul>",
+        },
+        {
+          id: 38,
+          question: "Antonym for Adieu-",
+          options: {
+            a: "Farewell",
+            b: "Good bye",
+            c: "Hello",
+            d: "Valediction",
+          },
+          correct: "c",
+          explanation:
+            "<p>Antonym হলো একটি শব্দের বিপরীত অর্থ প্রকাশক শব্দ। 'Adieu' অর্থ বিদায় বা বিদায় সম্ভাষণ।</p><br><p><b>ব্যাখ্যা:</b></p><ul><li><b>(A) Farewell:</b> 'Farewell' (বিদায়) হলো 'Adieu' এর একটি Synonym (সমার্থক শব্দ)।</li><li><b>(B) Good bye:</b> 'Good bye' (বিদায়) হলো 'Adieu' এর একটি Synonym (সমার্থক শব্দ)।</li><li><b>(C) Hello:</b> 'Hello' (শুভেচ্ছা, সম্ভাষণ) হলো 'Adieu' এর Antonym (বিপরীত শব্দ)। 'Adieu' যেখানে বিদায় বোঝায়, 'Hello' সেখানে সাক্ষাৎ বা স্বাগত বোঝায়।</li><li><b>(D) Valediction:</b> 'Valediction' (বিদায় সম্ভাষণ) হলো 'Adieu' এর একটি Synonym (সমার্থক শব্দ)।</li></ul>",
+        },
+        {
+          id: 39,
+          question: "The synonyms of 'altitude' is-",
+          options: {
+            a: "height",
+            b: "width",
+            c: "length",
+            d: "depth",
+          },
+          correct: "a",
+          explanation:
+            "<p>Synonym হলো একটি শব্দের সমার্থক শব্দ। 'Altitude' অর্থ উচ্চতা, সমুদ্রপৃষ্ঠ থেকে উচ্চতা।</p><br><p><b>ব্যাখ্যা:</b></p><ul><li><b>(A) height:</b> 'Height' (উচ্চতা) হলো 'Altitude' এর সবচেয়ে কাছের সমার্থক শব্দ।</li><li><b>(B) width:</b> 'Width' (প্রস্থ) ভিন্ন অর্থ প্রকাশ করে।</li><li><b>(C) length:</b> 'Length' (দৈর্ঘ্য) ভিন্ন অর্থ প্রকাশ করে।</li><li><b>(D) depth:</b> 'Depth' (গভীরতা) হলো 'Altitude' এর Antonym (বিপরীত শব্দ)।</li></ul>",
+        },
+        {
+          id: 40,
+          question:
+            'What may be considered courteous in one culture may be arrogant in another. Here the underlined word "arrogant" means-',
+          options: {
+            a: "rude",
+            b: "gracious",
+            c: "coarse",
+            d: "pretentious",
+          },
+          correct: "a",
+          explanation:
+            "<p>এখানে 'arrogant' অর্থ অহংকারী, উদ্ধত বা দাম্ভিক।</p><br><p><b>ব্যাখ্যা:</b></p><ul><li><b>(A) rude:</b> 'Rude' (অসভ্য, অভদ্র) হলো 'arrogant' এর একটি কাছের অর্থ প্রকাশক শব্দ। অহংকার প্রায়শই অভদ্র আচরণের কারণ হয়।</li><li><b>(B) gracious:</b> 'Gracious' (দয়ালু, বিনয়ী) হলো 'arrogant' এর Antonym (বিপরীত শব্দ)।</li><li><b>(C) coarse:</b> 'Coarse' (রুক্ষ, অমার্জিত) ভিন্ন অর্থ প্রকাশ করে।</li><li><b>(D) pretentious:</b> 'Pretentious' (ভঙ্গুর, ভানকারী) অর্থ এমন আচরণ করা যেন বেশি গুরুত্বপূর্ণ বা প্রতিভাবান। এটি 'arrogant' এর কাছাকাছি হলেও 'rude' বেশি সরাসরি অর্থ প্রকাশ করে।</li></ul>",
+        },
+        {
+          id: 41,
+          question: "What is the verb form of the word 'ability'?",
+          options: {
+            a: "Capable",
+            b: "Inability",
+            c: "Enable",
+            d: "Unable",
+          },
+          correct: "c",
+          explanation:
+            "<p>'Ability' হলো একটি noun যার অর্থ ক্ষমতা। প্রশ্নটি এর verb form জানতে চাইছে।</p><br><p><b>ব্যাখ্যা:</b></p><ul><li><b>(A) Capable:</b> 'Capable' (সক্ষম) হলো একটি adjective।</li><li><b>(B) Inability:</b> 'Inability' (অক্ষমতা) হলো 'ability' এর Antonym (বিপরীত) noun form।</li><li><b>(C) Enable:</b> 'Enable' (সক্ষম করা) হলো 'ability' এর verb form। এটি কাউকে কোনো কিছু করার ক্ষমতা দেওয়া বোঝায়।</li><li><b>(D) Unable:</b> 'Unable' (অক্ষম) হলো একটি adjective।</li></ul>",
+        },
+        {
+          id: 42,
+          question: "Which word is similar to 'appal'?",
+          options: {
+            a: "deceive",
+            b: "confuse",
+            c: "dismay",
+            d: "solicit",
+          },
+          correct: "c",
+          explanation:
+            "<p>Synonym হলো একটি শব্দের সমার্থক শব্দ। 'Appal' অর্থ আতঙ্কিত করা, হতবাক করা বা বিচলিত করা।</p><br><p><b>ব্যাখ্যা:</b></p><ul><li><b>(A) deceive:</b> 'Deceive' (প্রতারণা করা) ভিন্ন অর্থ প্রকাশ করে।</li><li><b>(B) confuse:</b> 'Confuse' (বিভ্রান্ত করা) ভিন্ন অর্থ প্রকাশ করে।</li><li><b>(C) dismay:</b> 'Dismay' (হতাশ করা, আতঙ্কিত করা) হলো 'Appal' এর সবচেয়ে কাছের সমার্থক শব্দ। এটি তীব্র উদ্বেগ বা হতাশাকে বোঝায়।</li><li><b>(D) solicit:</b> 'Solicit' (অনুরোধ করা, প্ররোচিত করা) ভিন্ন অর্থ প্রকাশ করে।</li></ul>",
+        },
+        {
+          id: 43,
+          question:
+            "A chart was appended to the report. Here 'appended' means-",
+          options: {
+            a: "changed",
+            b: "removed",
+            c: "joined",
+            d: "shortened",
+          },
+          correct: "c",
+          explanation:
+            "<p>এখানে 'appended' অর্থ যোগ করা, সংযুক্ত করা বা পরিশিষ্ট হিসেবে যুক্ত করা।</p><br><p><b>ব্যাখ্যা:</b></p><ul><li><b>(A) changed:</b> 'Changed' (পরিবর্তিত) ভিন্ন অর্থ প্রকাশ করে।</li><li><b>(B) removed:</b> 'Removed' (অপসারণ করা) হলো 'appended' এর Antonym (বিপরীত শব্দ)।</li><li><b>(C) joined:</b> 'Joined' (সংযুক্ত করা, যোগ করা) হলো 'appended' এর সবচেয়ে কাছের অর্থ প্রকাশক শব্দ।</li><li><b>(D) shortened:</b> 'Shortened' (সংক্ষিপ্ত করা) ভিন্ন অর্থ প্রকাশ করে।</li></ul>",
+        },
+        {
+          id: 44,
+          question: "The new offer of job was alluring. Here 'alluring' means-",
+          options: {
+            a: "unexpected",
+            b: "tempting",
+            c: "joined",
+            d: "shortened",
+          },
+          correct: "b",
+          explanation:
+            "<p>এখানে 'alluring' অর্থ প্রলুব্ধকর, লোভনীয় বা আকর্ষণীয়।</p><br><p><b>ব্যাখ্যা:</b></p><ul><li><b>(A) unexpected:</b> 'Unexpected' (অপ্রত্যাশিত) ভিন্ন অর্থ প্রকাশ করে।</li><li><b>(B) tempting:</b> 'Tempting' (লোভনীয়, প্রলুব্ধকর) হলো 'alluring' এর সবচেয়ে কাছের অর্থ প্রকাশক শব্দ।</li><li><b>(C) joined:</b> 'Joined' (সংযুক্ত) ভিন্ন অর্থ প্রকাশ করে।</li><li><b>(D) shortened:</b> 'Shortened' (সংক্ষিপ্ত) ভিন্ন অর্থ প্রকাশ করে।</li></ul>",
+        },
+      ];
+
+      const totalQuestions = questions.length;
+      let timeLeft = Math.floor(totalQuestions / 2) * 60;
+      const timerElement = document.getElementById("timer");
+      let timerInterval;
+
+      function updateTimer() {
+        const minutes = Math.floor(timeLeft / 60);
+        const seconds = timeLeft % 60;
+        timerElement.innerText = `${toBengaliNumber(
+          minutes
+        )} মিনিট ${toBengaliNumber(seconds)} সেকেন্ড`;
+
+        if (timeLeft > 0) {
+          timeLeft--;
+        } else {
+          stopTimer();
+          confirmSubmit();
+        }
+      }
+
+      function startTimer() {
+        console.log("Starting timer");
+        timerElement.innerText = `${toBengaliNumber(
+          Math.floor(timeLeft / 60)
+        )} মিনিট ${toBengaliNumber(timeLeft % 60)} সেকেন্ড`;
+        timerInterval = setInterval(updateTimer, 1000);
+      }
+
+      function stopTimer() {
+        clearInterval(timerInterval);
+        console.log("Timer stopped");
+      }
+
+      function toBengaliNumber(num) {
+        const bengaliDigits = [
+          "০",
+          "১",
+          "২",
+          "৩",
+          "৪",
+          "৫",
+          "৬",
+          "৭",
+          "৮",
+          "৯",
+        ];
+        let numStr = num.toString();
+
+        let isNegative = num < 0;
+        if (isNegative) {
+          numStr = numStr.substring(1);
+        }
+
+        if (numStr.includes(".")) {
+          let [integerPart, decimalPart] = numStr.split(".");
+          let integerBengali = integerPart
+            .split("")
+            .map((digit) => bengaliDigits[parseInt(digit)])
+            .join("");
+          let decimalBengali = decimalPart
+            .split("")
+            .map((digit) => bengaliDigits[parseInt(digit)])
+            .join("");
+          return (
+            (isNegative ? "−" : "") + integerBengali + "." + decimalBengali
+          );
+        } else {
+          let integerBengali = numStr
+            .split("")
+            .map((digit) => bengaliDigits[parseInt(digit)])
+            .join("");
+          return (isNegative ? "−" : "") + integerBengali;
+        }
+      }
+
+      function shuffleArray(array) {
+        for (let i = array.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [array[i], array[j]] = [array[j], array[i]];
+        }
+        return array;
+      }
+
+      function generateQuestions() {
+        console.log("Generating questions");
+        const examContainer = document.querySelector("#exam");
+        if (!examContainer) {
+          console.error("Exam container (#exam) not found!");
+          return;
+        }
+        examContainer.innerHTML = "";
+        console.log("Questions array:", questions);
+        const shuffledQuestions = shuffleArray([...questions]);
+        shuffledQuestions.forEach((question, index) => {
+          console.log(`Generating question ${index + 1}:`, question);
+          const questionDiv = document.createElement("div");
+          questionDiv.classList.add("question-container");
+          questionDiv.setAttribute("data-question", question.id);
+          questionDiv.setAttribute("data-correct", question.correct);
+
+          let optionsHTML = "";
+          for (let option in question.options) {
+            optionsHTML += `
+                                                                          <label class="option" data-option="${option}">
+                                                                            <div class="circle">${option}</div>
+                                                                            <span class="option-text">${question.options[option]}</span>
+                                                                          </label>
+                                                                        `;
+          }
+
+          const explanationHTML = question.explanation
+            ? `<div class="explanation-dropdown">
+                                                                             <button class="explanation-btn">ব্যাখ্যা দেখো</button>
+                                                                             <div class="explanation-content">
+                                                                               <div class="explanation-label">ব্যাখ্যা:</div>
+                                                                               ${question.explanation}
+                                                                             </div>
+                                                                           </div>`
+            : "";
+
+          questionDiv.innerHTML = `
+                                                                        <p class="question-label">${
+                                                                          index +
+                                                                          1
+                                                                        }. ${
+            question.question
+          }</p>
+                                                                        <div class="options">
+                                                                          ${optionsHTML}
+                                                                        </div>
+                                                                        ${explanationHTML}
+                                                                      `;
+          examContainer.appendChild(questionDiv);
+          console.log(`Appended question ${index + 1} to exam container`);
+        });
+
+        const questionContainers = document.querySelectorAll(
+          ".question-container"
+        );
+        console.log(`Found ${questionContainers.length} question containers`);
+        questionContainers.forEach((container, idx) => {
+          console.log(`Setting question ${idx + 1} to visible`);
+          container.style.display = "block";
+        });
+
+        document.querySelectorAll(".option").forEach((option) => {
+          option.addEventListener(
+            "click",
+            function (e) {
+              e.preventDefault();
+              const parent = this.closest(".question-container");
+              if (parent.classList.contains("locked")) return;
+              parent.classList.add("locked");
+              parent.querySelectorAll(".option").forEach((el) => {
+                if (el !== this) {
+                  el.style.pointerEvents = "none";
+                  el.style.cursor = "default";
+                }
+                el.classList.remove("selected");
+              });
+              this.classList.add("selected");
+              console.log(
+                `Option selected for question ${parent.getAttribute(
+                  "data-question"
+                )}: ${this.getAttribute("data-option")}`
+              );
+            },
+            { once: true }
+          );
+        });
+
+        document.querySelectorAll(".explanation-btn").forEach((btn) => {
+          btn.addEventListener("click", function () {
+            const content = this.nextElementSibling;
+            content.classList.toggle("visible");
+            this.classList.toggle("active");
+            console.log("Toggled explanation visibility");
+          });
+        });
+
+        const examInfo = document.getElementById("exam-info");
+        if (examInfo) {
+          examInfo.innerText = `পূর্ণ নম্বরঃ ${toBengaliNumber(
+            totalQuestions
+          )}`;
+          console.log("Exam info updated");
+        } else {
+          console.error("Exam info element not found!");
+        }
+      }
+
+      function initializeChart() {
+        console.log("Initializing chart");
+        const ctx = document.getElementById("scoreChart").getContext("2d");
+        chartInstance = new Chart(ctx, {
+          type: "pie",
+          data: {
+            labels: ["ঠিক উত্তর", "ভুল উত্তর", "অনুত্তরিত"],
+            datasets: [
+              {
+                data: [0, 0, 0],
+                backgroundColor: ["#34c759", "#ff3b30", "#007aff"],
+                borderColor: "#fff",
+                borderWidth: 2,
+                hoverOffset: 10,
+              },
+            ],
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            cutout: "10%",
+            layout: {
+              padding: 10,
+            },
+            plugins: {
+              legend: {
+                position: "bottom",
+                labels: {
+                  font: {
+                    family: '"Hind Siliguri", sans-serif',
+                    size: 13,
+                    weight: "bold",
+                  },
+                  color: "#333",
+                  padding: 12,
+                  boxWidth: 14,
+                  generateLabels: (chart) => {
+                    const data = chart.data;
+                    return data.labels.map((label, i) => ({
+                      text: label,
+                      font: {
+                        family: '"Hind Siliguri", sans-serif',
+                      },
+                      fillStyle: data.datasets[0].backgroundColor[i],
+                      hidden: !chart.getDataVisibility(i),
+                      index: i,
+                    }));
+                  },
+                },
+              },
+              tooltip: {
+                backgroundColor: "rgba(0, 0, 0, 0.9)",
+                cornerRadius: 6,
+                titleFont: {
+                  family: '"Hind Siliguri", sans-serif',
+                  size: 14,
+                  weight: "bold",
+                },
+                bodyFont: {
+                  family: '"Hind Siliguri", sans-serif',
+                  size: 13,
+                },
+                padding: 10,
+                boxPadding: 5,
+              },
+            },
+            animation: {
+              animateScale: true,
+              animateRotate: true,
+              duration: 1000,
+              easing: "easeOutQuart",
+            },
+            elements: {
+              arc: {
+                borderRadius: 8,
+              },
+            },
+            onClick: (e, elements) => {
+              if (elements.length > 0) {
+                const index = elements[0].index;
+                const filter = ["correct", "wrong", "unanswered"][index];
+                filterQuestions(filter);
+              } else {
+                filterQuestions("all");
+              }
+            },
+          },
+        });
+        console.log("Chart initialized");
+      }
+
+      function filterQuestions(type) {
+        console.log(`Filtering questions by type: ${type}`);
+        document.querySelectorAll(".question-container").forEach((question) => {
+          const status = question.getAttribute("data-status");
+          if (type === "all" || status === type) {
+            question.style.display = "block";
+          } else {
+            question.style.display = "none";
+          }
+        });
+      }
+
+      function showConfirmPopup() {
+        console.log("Showing confirm popup");
+        document.getElementById("confirmPopup").style.display = "block";
+      }
+
+      function autoSubmitScore() {
+        console.log("Auto-submitting score");
+        stopTimer();
+        let score = 0,
+          total = questions.length,
+          answered = 0,
+          correct = 0,
+          wrong = 0,
+          unanswered = 0;
+
+        document.querySelectorAll(".question-container").forEach((question) => {
+          let correctAnswer = question.getAttribute("data-correct");
+          let selectedOption = question.querySelector(".option.selected");
+
+          if (selectedOption) {
+            answered++;
+            let chosenAnswer = selectedOption.getAttribute("data-option");
+            if (chosenAnswer === correctAnswer) {
+              score += 1;
+              correct++;
+              question.setAttribute("data-status", "correct");
+            } else {
+              score -= 0.25;
+              wrong++;
+              question.setAttribute("data-status", "wrong");
+            }
+          } else {
+            unanswered++;
+            question.setAttribute("data-status", "unanswered");
+          }
+        });
+
+        const userID = sessionStorage.getItem("userID") || "anonymous";
+        const formData = new FormData();
+        formData.append("userID", userID);
+        formData.append("finalScore", score.toFixed(2));
+        formData.append("correctAnswers", correct);
+        formData.append("wrongAnswers", wrong);
+        formData.append("unanswered", unanswered);
+
+        const url = "https://formspree.io/f/xpwy";
+        navigator.sendBeacon(url, formData);
+        console.log("Auto-submission sent via sendBeacon for userID:", userID);
+      }
+
+      function confirmSubmit() {
+        console.log("Confirming submission");
+        document.getElementById("confirmPopup").style.display = "none";
+        stopTimer();
+        let score = 0,
+          total = questions.length,
+          answered = 0,
+          correct = 0,
+          wrong = 0,
+          unanswered = 0;
+
+        document
+          .querySelectorAll(".question-container")
+          .forEach((question, index) => {
+            let correctAnswer = question.getAttribute("data-correct");
+            let selectedOption = question.querySelector(".option.selected");
+
+            if (selectedOption) {
+              answered++;
+              let chosenAnswer = selectedOption.getAttribute("data-option");
+              if (chosenAnswer === correctAnswer) {
+                selectedOption
+                  .querySelector(".option-text")
+                  .classList.add("correct-text");
+                score += 1;
+                correct++;
+                question.setAttribute("data-status", "correct");
+              } else {
+                selectedOption
+                  .querySelector(".option-text")
+                  .classList.add("incorrect-text");
+                question
+                  .querySelector(
+                    `[data-option="${correctAnswer}"] .option-text`
+                  )
+                  .classList.add("correct-text");
+                score -= 0.25;
+                wrong++;
+                question.setAttribute("data-status", "wrong");
+              }
+            } else {
+              question
+                .querySelector(`[data-option="${correctAnswer}"] .option-text`)
+                .classList.add("unattempted-text");
+              unanswered++;
+              question.setAttribute("data-status", "unanswered");
+            }
+            question.style.display = "block";
+
+            const explanationDropdown = question.querySelector(
+              ".explanation-dropdown"
+            );
+            if (explanationDropdown) {
+              explanationDropdown.classList.add("visible");
+            }
+          });
+
+        const chartContainer = document.querySelector(".chart-container");
+        chartContainer.classList.add("visible");
+        if (!chartInstance) {
+          initializeChart();
+        }
+        chartInstance.data.datasets[0].data = [correct, wrong, unanswered];
+        chartInstance.update();
+        console.log("Chart updated with data:", [correct, wrong, unanswered]);
+
+        const userID = sessionStorage.getItem("userID") || "anonymous";
+        document.getElementById("totalQuestions").innerText =
+          toBengaliNumber(total);
+        document.getElementById("answered").innerText =
+          toBengaliNumber(answered);
+        document.getElementById("correctAnswers").innerText =
+          toBengaliNumber(correct);
+        document.getElementById("wrongAnswers").innerText =
+          toBengaliNumber(wrong);
+        document.getElementById("unanswered").innerText =
+          toBengaliNumber(unanswered);
+        document.getElementById("finalScore").innerText = toBengaliNumber(
+          score.toFixed(2)
+        );
+
+        document.getElementById("formUserID").value = userID;
+        document.getElementById("formFinalScore").value = score.toFixed(2);
+        document.getElementById("formCorrectAnswers").value = correct;
+        document.getElementById("formWrongAnswers").value = wrong;
+        document.getElementById("formUnanswered").value = unanswered;
+
+        document.getElementById("submitBtn").style.display = "none";
+
+        document.getElementById("scorePopup").style.display = "block";
+
+        const form = document.getElementById("scoreForm");
+        fetch(form.action, {
+          method: "POST",
+          body: new FormData(form),
+          headers: {
+            Accept: "application/json",
+          },
+        })
+          .then((response) => {
+            if (response.ok) {
+              console.log("Form submitted successfully");
+              form.reset();
+            } else {
+              console.error("Form submission failed:", response.statusText);
+            }
+          })
+          .catch((error) => {
+            console.error("Error:", error);
+          });
+      }
+
+      function cancelSubmit() {
+        console.log("Canceling submission");
+        document.getElementById("confirmPopup").style.display = "none";
+      }
+
+      document
+        .getElementById("submitBtn")
+        .addEventListener("click", function () {
+          console.log("Submit button clicked");
+          showConfirmPopup();
+        });
+
+      function closePopup() {
+        console.log("Closing score popup");
+        const scorePopup = document.getElementById("scorePopup");
+        scorePopup.classList.add("slide-out");
+        setTimeout(() => {
+          scorePopup.style.display = "none";
+          scorePopup.classList.remove("slide-out");
+          window.scrollTo({ top: 0, behavior: "smooth" });
+        }, 500);
+      }
+
+      document
+        .getElementById("scoreForm")
+        .addEventListener("submit", function (event) {
+          event.preventDefault();
+          console.log("Score form submitted");
+          closePopup();
+        });
+    </script>
+  </body>
+</html>
